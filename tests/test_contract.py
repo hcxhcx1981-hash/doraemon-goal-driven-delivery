@@ -93,7 +93,8 @@ class RepositoryContract(unittest.TestCase):
                    'docs/ARCHITECTURE.md', 'docs/WORKFLOW.md', 'docs/INSTALLATION.md',
                    'docs/SAFETY.md', 'adapters/codebuddy/inline-rules.md',
                    'examples/task-dispatch.md', 'examples/acceptance-report.md',
-                   'examples/AGENTS.example.md', 'tests/test_contract.py'}
+                   'examples/AGENTS.example.md', 'tests/test_contract.py',
+                   '.github/workflows/ci.yml'}
         actual = set()
         for p in ROOT.rglob('*'):
             rel = p.relative_to(ROOT)

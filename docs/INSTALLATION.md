@@ -8,11 +8,11 @@
 
 | Agent | Windows 用户目录下的候选位置 | 本次验证 |
 | --- | --- | --- |
-| Codex / CX | `.codex\skills` | 文件一致；当前会话显式提供规则 |
-| Agnes Code / AC | `.agnes\skills` | 文件一致；发现/行为 UNVERIFIED |
-| Hermes / H | `.hermes\skills\execution` | 文件一致；发现/行为 UNVERIFIED |
-| WorkBuddy / WB | `.workbuddy\skills` | 文件一致；发现/行为 UNVERIFIED |
-| CodeBuddy / CB | 不依赖安装目录，任务内嵌 | 文案已核对；行为 UNVERIFIED |
+| Codex | `.codex\skills` | 文件一致；当前会话显式提供规则 |
+| Agnes Code | `.agnes\skills` | 文件一致；发现/行为 UNVERIFIED |
+| Hermes | `.hermes\skills\execution` | 文件一致；发现/行为 UNVERIFIED |
+| WorkBuddy | `.workbuddy\skills` | 文件一致；发现/行为 UNVERIFIED |
+| CodeBuddy | 不依赖安装目录，任务内嵌 | 文案已核对；行为 UNVERIFIED |
 
 ## Windows PowerShell
 
@@ -23,10 +23,10 @@ git clone https://github.com/hcxhcx1981-hash/doraemon-goal-driven-delivery.git
 Set-Location .\doraemon-goal-driven-delivery
 $source = (Resolve-Path .\SKILL.md).Path
 # 根据目标宿主选择一项；须先确认实际配置，没有自动探测保证。
-$skillRoot = Join-Path $HOME '.codex\skills'                 # CX
-# $skillRoot = Join-Path $HOME '.agnes\skills'               # AC
-# $skillRoot = Join-Path $HOME '.hermes\skills\execution'    # H
-# $skillRoot = Join-Path $HOME '.workbuddy\skills'           # WB
+$skillRoot = Join-Path $HOME '.codex\skills'                 # Codex
+# $skillRoot = Join-Path $HOME '.agnes\skills'               # Agnes Code
+# $skillRoot = Join-Path $HOME '.hermes\skills\execution'    # Hermes
+# $skillRoot = Join-Path $HOME '.workbuddy\skills'           # WorkBuddy
 if (-not (Test-Path -LiteralPath $skillRoot -PathType Container)) {
     throw '先从宿主配置确认并创建正确的 Skill 根目录，再继续。'
 }
@@ -54,7 +54,7 @@ Select-String -LiteralPath (Join-Path $destination 'SKILL.md') -Pattern 'V1.1'
 
 ## CodeBuddy 与其他 Agent
 
-CB 每次派工把 [inline-rules.md](../adapters/codebuddy/inline-rules.md) 的可复制规则块附加到任务正文，再提供明确目标、范围、验收和预算。本项目不声明 CB 原生 Skill 安装已验证。若未来版本支持原生 Skills，先按真实宿主能力验证，不能从目录存在推断。
+CodeBuddy 每次派工把 [inline-rules.md](../adapters/codebuddy/inline-rules.md) 的可复制规则块附加到任务正文，再提供明确目标、范围、验收和预算。本项目不声明 CodeBuddy 原生 Skill 安装已验证。若未来版本支持原生 Skills，先按真实宿主能力验证，不能从目录存在推断。
 
 其他 Agent 优先用其真实支持的 Skill 加载机制；否则把 SKILL.md 核心规则显式随任务传入。保持安全优先级与 2/4 预算完整，不冒充自动加载。开发守卫需要另外安装或由派工明确传入适用规则。
 

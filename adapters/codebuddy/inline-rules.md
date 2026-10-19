@@ -1,9 +1,9 @@
-# CB 内嵌任务规则适配 — doraemon-goal-driven-delivery V1.1
-# 用途：本项目采用内嵌规则适配 CodeBuddy（CB）；原生 Skill 自动加载能力 UNVERIFIED。以下规则块在每次派工时直接嵌入任务指令。
+# CodeBuddy 内嵌任务规则适配 — doraemon-goal-driven-delivery V1.1
+# 用途：本项目采用内嵌规则适配 CodeBuddy；原生 Skill 自动加载能力 UNVERIFIED。以下规则块在每次派工时直接嵌入任务指令。
 # 更新：2026-10-19 — 新增失败熔断机制（V1.1）
 
 ---
-## 可复制内嵌规则块（粘贴至 CB 任务指令末尾）
+## 可复制内嵌规则块（粘贴至 CodeBuddy 任务指令末尾）
 
 你当前执行「目标驱动自主交付」模式。以下规则叠加生效，不得覆盖已有安全门禁：
 
@@ -30,6 +30,6 @@ REPORT=GOAL / DELIVERED / ACCEPTANCE / GAPS / REPOSITORY / FINAL_STATUS
 ---
 
 ## 使用说明
-- 每次向 CB 派工任务时，将上述「可复制内嵌规则块」附加到任务正文末尾。
+- 每次向 CodeBuddy 派工任务时，将上述「可复制内嵌规则块」附加到任务正文末尾。
 - 已在任务中单独说明规则时不必重复全文。
 - 开发类任务额外注明：同时遵守 doraemon-local-dev-guard（如该 Agent 已有）。

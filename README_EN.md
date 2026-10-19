@@ -1,5 +1,9 @@
 # Doraemon Goal-Driven Delivery
 
+[![CI](https://github.com/hcxhcx1981-hash/doraemon-goal-driven-delivery/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/hcxhcx1981-hash/doraemon-goal-driven-delivery/actions/workflows/ci.yml)
+
+Green = current CI checks passed; red = current CI checks failed. Passing CI does not mean real-agent end-to-end autonomous execution has been verified.
+
 **V1.1 · Authorize once. Deliver continuously. Verify with evidence. Stop within limits.**
 
 [中文](README.md) · [Canonical rules in Chinese](SKILL.md) · [Installation](docs/INSTALLATION.md) · [Architecture](docs/ARCHITECTURE.md) · [Workflow](docs/WORKFLOW.md) · [Safety](docs/SAFETY.md)
@@ -20,8 +24,8 @@ Follow the [PowerShell installation guide](docs/INSTALLATION.md), explicitly req
 
 ## Verification status
 
-The four locally installed CX/AC/H/WB V1.1 files matched byte-for-byte. The canonical SKILL.md is preserved unchanged. The CB adapter retains its V1.1 rules; a categorical native-installation claim was replaced with UNVERIFIED. Static contract tests and a test-only fuse reference model are reproducible with `python -X utf8 -m unittest discover -s tests -v`. Scenario tests do not prove real-agent compliance or enforce permissions.
+The four locally installed Codex/Agnes Code/Hermes/WorkBuddy V1.1 files matched byte-for-byte. The canonical SKILL.md is preserved unchanged. The CodeBuddy adapter retains its V1.1 rules; a categorical native-installation claim was replaced with UNVERIFIED. Static contract tests and a test-only fuse reference model are reproducible with `python -X utf8 -m unittest discover -s tests -v`. Scenario tests do not prove real-agent compliance or enforce permissions.
 
-This CX session explicitly supplied the Skill. Automatic discovery and behavioral E2E for AC/H/WB/CB remain **UNVERIFIED**. Historical T1–T7 summaries lack reproducible fuse test sources and are not accepted as behavior evidence. See the Chinese README for GitHub-native architecture/state diagrams and the workflow document for rendering checks.
+This Codex session explicitly supplied the Skill. Automatic discovery and behavioral E2E for Agnes Code/Hermes/WorkBuddy/CodeBuddy remain **UNVERIFIED**. Historical T1–T7 summaries lack reproducible fuse test sources and are not accepted as behavior evidence. See the Chinese README for GitHub-native architecture/state diagrams and the workflow document for rendering checks.
 
 No runtime dependencies. Tests use Python's standard library. MIT applies to repository content only; third-party hosts, trademarks and external guards are not included.
