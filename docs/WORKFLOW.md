@@ -2,20 +2,16 @@
 
 [返回 README](../README.md)
 
-任务类型为 BUILD / RESEARCH / AUDIT / ARTIFACT。启动前冻结 GOAL_BASELINE：目标、产物、已有基线、验收、授权、禁止动作、资源预算。只做一次最小环境检查，再连续执行实现/采集、验证、定位、有限修复和复测。每个有效修复都有证据账目；计数跟随任务与根因，不跟随文件名或聊天名称。
+任务类型为 CODE_DEV / RESEARCH（含 AUDIT 模式）/ ARTIFACT（含 PPT 子类型）；判型与子类型规则见 `references/machine-fields.md`。启动前冻结 GOAL_BASELINE：目标、产物、已有基线、验收、授权、禁止动作、资源预算。只做一次最小环境检查，再连续执行实现/采集、验证、定位、有限修复和复测。每个有效修复都有证据账目；计数跟随任务与根因，不跟随文件名或聊天名称。L 级任务写 `task-ledger.json`，跨会话继承计数与预算。
 
-验证失败先分析证据，再检查修复前的预算与安全边界。计数达到 2/4 后不能再做下一轮；成功则立即交付，失败则熔断保全。即使尚有预算，没有新证据也不继续。验收通过后不擅自启动新阶段。
+验证失败先分析证据，再检查修复前的预算与安全边界。计数达到 2/4 后不能再做下一轮；成功则立即交付，失败则熔断保全。即使尚有预算，没有新证据也不继续。验收通过后不擅自启动新阶段。停轮询（连续 2 次无变化）不等于取消后台任务。
 
 ## 可复现验证
 
 ```powershell
 python -X utf8 -m unittest discover -s tests -v
-git diff --check
-git ls-files
+python -X utf8 tests\schema_check.py   # JSON Schema Draft 2020-12 真实正反例校验（需 jsonschema，开发依赖）
+python -X utf8 tests\behavior_ac.py    # 宿主模拟行为测试（模拟，不是宿主真实行为验证）
 ```
 
-测试覆盖文档契约、相对链接、文件白名单、安全模式及测试用熔断参考模型。它不执行 Agent、不联网、不读取真实密钥、不强制生产行为。安装示例另用 PowerShell Parser 静态解析，在临时目录模拟复制及哈希校验。正式安装前仍要确认宿主实际 Skill 目录。
-
-Mermaid 维护验证使用外部临时工具目录中的 Mermaid CLI 将 README 两个代码块渲染成 SVG，并在发布后检查 GitHub 渲染结果。渲染工具不作为项目依赖分发；若工具不可用须报告 UNVERIFIED，不能用正则检查冒充渲染成功。README 相对链接由测试检查，发布 URL 在推送后独立回读。
-
-历史隔离测试只留下 T1–T7 PASS 汇总和简单 calculator/greeter 代码；无法重建原熔断验证过程，不复用作行为证据，也不上传其本地报告。新的参考模型测试只证明公开契约可一致表达。真实宿主行为须另做隔离 E2E。
+测试分层（见 README「验证状态」）：静态规则测试（文档契约/链接/安全模式）、真实代码测试（path_engine/ledger 随包实现 + 自建 Git 夹具）、模拟测试（行为测试在临时树模拟宿主管线）、宿主行为测试（须在真实宿主隔离 E2E，本包不代验）。测试不执行 Agent、不联网、不读取真实密钥。Git 夹具由 `make_git_fixture` 自建，不依赖 ZIP 中隐藏的 `.git`。

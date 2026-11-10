@@ -1,0 +1,5 @@
+# Doraemon Goal-Driven Delivery — development dependencies
+# Runtime is stdlib-only. This file is for DEVELOPMENT validation only:
+# JSON Schema Draft 2020-12 real positive/negative validation (tests/schema_check.py).
+# The shipped skill has ZERO runtime dependencies.
+jsonschema>=4.0
