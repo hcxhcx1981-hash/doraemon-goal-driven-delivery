@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "doraemon-goal-driven-delivery/v2/task-ledger",
+  "title": "Doraemon V2 task ledger (L-level tasks only)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["task_id", "goal", "task_type", "status", "updated_at", "repair_rounds"],
+  "properties": {
+    "task_id": { "type": "string", "minLength": 1 },
+    "goal": { "type": "string", "minLength": 1 },
+    "task_type": { "enum": ["CODE_DEV", "RESEARCH", "ARTIFACT"] },
+    "mode": { "enum": ["NORMAL", "AUDIT"], "default": "NORMAL" },
+    "status": { "enum": ["IN_PROGRESS", "BLOCKED", "PARTIAL", "DONE"] },
+    "blocked_reason": { "type": ["string", "null"], "description": "Non-null when status=BLOCKED; BLOCKED state is persisted with a reason, never silently dropped." },
+    "completed": { "type": "array", "items": { "type": "string" } },
+    "remaining": { "type": "array", "items": { "type": "string" } },
+    "root_causes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "hypothesis"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "hypothesis": { "type": "string" },
+          "evidence_refs": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "repair_rounds": {
+      "type": "object",
+      "description": "root_cause_id -> round count. Hard limits: each cause max 2, total max 4. Counts are inherited across sessions and must never be reset by renaming or restart. 'total' is REQUIRED; a ledger missing total is rejected, not defaulted to zero. 'total' MUST equal the sum of all per-cause counters; a mismatch is count corruption and continued repair is refused (checked by ledger.counts_consistent, which JSON Schema cannot express as cross-field equality).",
+      "required": ["total"],
+      "minProperties": 1,
+      "patternProperties": {
+        "^total$": { "type": "integer", "minimum": 0, "maximum": 4 }
+      },
+      "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 2 }
+    },
+    "repair_events": {
+      "type": "array",
+      "description": "Per-round repair records. A round claiming new_evidence=true MUST carry at least one evidence ref so every counted round stays linked to auditable evidence, never free-floating.",
+      "items": {
+        "type": "object",
+        "required": ["cause", "new_evidence", "result"],
+        "additionalProperties": false,
+        "properties": {
+          "cause": { "type": "string", "minLength": 1 },
+          "new_evidence": { "type": "boolean" },
+          "result": { "enum": ["PASS", "FAIL", "NO_PROGRESS", "UNKNOWN"] },
+          "evidence_refs": { "type": "array", "items": { "type": "string" } },
+          "at": { "type": "string" }
+        },
+        "if": { "properties": { "new_evidence": { "const": true } }, "required": ["new_evidence"] },
+        "then": { "required": ["evidence_refs"], "properties": { "evidence_refs": { "minItems": 1 } } }
+      }
+    },
+    "attempted_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "result"],
+        "additionalProperties": false,
+        "properties": {
+          "action": { "type": "string" },
+          "result": { "enum": ["PASS", "FAIL", "NO_PROGRESS", "UNKNOWN"] },
+          "new_evidence": { "type": "boolean" },
+          "at": { "type": "string" }
+        }
+      }
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["ref"],
+        "additionalProperties": false,
+        "properties": {
+          "ref": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "required": ["level"],
+      "additionalProperties": false,
+      "properties": {
+        "level": { "enum": ["S", "M", "L", "UNKNOWN"] },
+        "time_seconds": { "type": ["integer", "string"], "anyOf": [{ "type": "integer", "minimum": 0 }, { "const": "UNKNOWN" }] },
+        "tool_calls": { "type": ["integer", "string"], "anyOf": [{ "type": "integer", "minimum": 0 }, { "const": "UNKNOWN" }] },
+        "model": { "type": "string" },
+        "quota": { "type": "string", "const": "UNKNOWN" }
+      }
+    },
+    "async_tasks": {
+      "type": "array",
+      "description": "Async task polling guard. 'stopped' means the POLLER stopped after two consecutive no-change polls; it does NOT cancel the background task. Task cancellation is a separate, explicit 'cancelled' flag. Stopping polling never claims the task was cancelled.",
+      "items": {
+        "type": "object",
+        "required": ["task_ref"],
+        "additionalProperties": false,
+        "properties": {
+          "task_ref": { "type": "string" },
+          "last_state": { "type": ["string", "null"] },
+          "no_change_polls": { "type": "integer", "minimum": 0, "maximum": 2 },
+          "stopped": { "type": "boolean" },
+          "cancelled": { "type": "boolean", "default": false },
+          "cancel_reason": { "type": ["string", "null"] }
+        },
+        "if": {
+          "properties": { "no_change_polls": { "minimum": 2 } },
+          "required": ["no_change_polls"]
+        },
+        "then": { "required": ["stopped"], "properties": { "stopped": { "const": true } } }
+      }
+    },
+    "next_action": { "type": "string", "minLength": 1 },
+    "stop_reason": { "type": ["string", "null"], "description": "Why work stopped: no-new-evidence, budget-exhausted, etc. Persisted so recovery sessions can distinguish stop causes." },
+    "resume_log": {
+      "type": "array",
+      "description": "Explicit resume authorizations. Terminal states never auto-continue; each re-open is recorded here with the authorizing dispatcher's context. Counts are inherited, never reset.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "authorized": { "type": "boolean" },
+          "at": { "type": "string" }
+        }
+      }
+    },
+    "final_status": { "enum": ["PASS", "PARTIAL", "BLOCKED", null] },
+    "updated_at": { "type": "string" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "const": "BLOCKED" } }, "required": ["status"] },
+      "then": { "required": ["blocked_reason", "final_status"], "properties": { "final_status": { "const": "BLOCKED" } } }
+    },
+    {
+      "if": {
+        "properties": { "budget": { "properties": { "level": { "const": "L" } }, "required": ["level"] } },
+        "required": ["budget"]
+      },
+      "then": { "required": ["next_action", "repair_rounds", "remaining", "completed"] }
+    }
+  ]
+}

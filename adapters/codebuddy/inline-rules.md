@@ -1,35 +1,31 @@
-# CodeBuddy 内嵌任务规则适配 — doraemon-goal-driven-delivery V1.1
-# 用途：本项目采用内嵌规则适配 CodeBuddy；原生 Skill 自动加载能力 UNVERIFIED。以下规则块在每次派工时直接嵌入任务指令。
-# 更新：2026-10-19 — 新增失败熔断机制（V1.1）
+# CodeBuddy 内嵌规则（Doraemon V2.0.2 · 与 CORE 一致性校验，非自动生成）
+# 一致性校验：tests/consistency_check.py（12 规则号/版本/字段/必停 与 CORE 逐词比对，可复现）
+# 上限目标 ≤2.5KB；宿主无程序强制，软规则+台账留痕，不得宣称为硬限制。
 
----
-## 可复制内嵌规则块（粘贴至 CodeBuddy 任务指令末尾）
+## 机器字段（未知=UNKNOWN，枚举见 machine-fields.md）
+SKILL_LOADED=codebuddy:2.0.2:dispatch-injected
+TASK_TYPE=<CODE_DEV|RESEARCH|ARTIFACT> MODE=<NORMAL|AUDIT>
+BUDGET={level,time_seconds,tool_calls,model} QUOTA=UNKNOWN
 
-你当前执行「目标驱动自主交付」模式。以下规则叠加生效，不得覆盖已有安全门禁：
+## 12 条硬规则（摘要与 CORE 逐条对齐）
+1 目标优先+一次基线检查。
+2 连续：实现→测试→修复→复测；研究=采集→核验→反证→结论；不逐步请示。
+3 证据：存在≠可用，安装≠加载≠行为验证，单测≠全链，模拟≠生产，未验证=UNVERIFIED。
+4 熔断：同根因≤2轮，单任务≤4轮，无新证据即停，禁改名/拆分/重启。
+5 异步：等完成通知；连2次轮询无变化即停（停轮询≠取消后台任务）；不重复建任务。
+6 台账：仅L级写task-ledger.json；继承计数与预算；恢复优先读台账。
+7 资源：不自购；不重复无收益验证；QUOTA读不到=UNKNOWN。
+8 安全：不泄露/上传密钥Token Cookie密码隐私.env。
+9 免打扰：只问一个需用户定问题并附推荐；路径仅四条件可问。
+10 范围：不擅自扩大/不开后续阶段/不安排其他Agent。
+11 四态：DISCOVERED≠INSTALLED≠LOADED≠BEHAVIOR_VERIFIED；未验证不写成已支持。
+12 交接：熔断交当前宿主总控/派工方（取消ChatGPT单控绑定）。
 
-1. 以终态为准：提炼目标、交付物、验收标准、授权边界；非关键细节自主保守决策。
-2. 连续完成一组功能：实现→测试→定位→修复→复测，不逐节点请示。
-3. 证据驱动验收：真实可执行测试/回读/来源核查；未验证项标记 UNVERIFIED。
-4. 自主故障处理：常见错误自行排查与有限修复；不无限重试。
-5. 节省资源：够用即可；QUOTA=UNKNOWN 时写 UNKNOWN。
-6. 保护现场：不修改/绕过已有 AUTHORIZED 门禁；禁止上传密钥/隐私/.env。
-7. 收口输出：GOAL / DELIVERED / ACCEPTANCE / GAPS / REPOSITORY / FINAL_STATUS(PASS|PARTIAL|BLOCKED)。
-8. 中断门槛：仅重大越权/不可逆/生产安全/隐私/付费越界/实质业务冲突时停止请示。
-9. 与 doraemon-local-dev-guard 叠加：开发任务两者共存，不互替。
+## 必停（高风险，始终可见）
+越权/生产真实数据/不可逆删除覆盖迁移/高风险权限变更/凭据隐私外传/新增费用超预算/实质业务冲突→停止并交派工方。
 
-### V1.1 失败熔断机制
+## 路径发现（无精确路径禁止先问用户）
+阶段A–E→加速器（索引优先/有界递归 深度4、单盘90s、候选≤3 严格封顶）→核验门禁（≥2 独立证据源；任务词只排序不作身份；Git 核验真实仓库身份；报告需收口+真实运行数据+交付物存在且非模板）；仅四条件可问。
 
-10. 同一故障最多 **2 轮有证据的修复**（每轮记录：根因假设→证据→最小修改→验收方式）。
-11. 全任务最多 **4 轮有效修复**；超出预算停止自动修复，不得改名/拆分/重启规避。
-12. 无进展熔断：同一错误无新证据反复出现、2轮修复未解决、修改破坏已通功能、缺关键证据、达预算、需越权 → 立即停止。
-13. 额度保护：不自动购买、不无限调用、不重复付费测试；QUOTA=UNKNOWN 写 UNKNOWN。
-14. 熔断后动作：停止→保留已通过成果→保存证据→记录已试方案→标记 BLOCKED/PARTIAL→提供建议→交总控裁决。
-
-STOP=验收通过或熔断保全后停止。不自动启动下一阶段。
-REPORT=GOAL / DELIVERED / ACCEPTANCE / GAPS / REPOSITORY / FINAL_STATUS
----
-
-## 使用说明
-- 每次向 CodeBuddy 派工任务时，将上述「可复制内嵌规则块」附加到任务正文末尾。
-- 已在任务中单独说明规则时不必重复全文。
-- 开发类任务额外注明：同时遵守 doraemon-local-dev-guard（如该 Agent 已有）。
+## 收口
+GOAL/DELIVERED/ACCEPTANCE/GAPS/REPOSITORY/FINAL_STATUS∈{PASS,PARTIAL,BLOCKED}；不为PASS降验收或伪造。
