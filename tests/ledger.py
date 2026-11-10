@@ -137,18 +137,30 @@ class Ledger:
         """Record a repair round; returns True if it was accepted (counted).
 
         - Not allowed (terminal / count issue / cap) -> NO_PROGRESS, refused.
-        - No new evidence -> recorded, NOT counted; repeated no-evidence
-          outcomes end in mark_stopped (persisted), not silent loops.
+        - No new evidence -> the stop is persisted IMMEDIATELY via
+          mark_stopped (status/BLOCKED + stop_reason + final_status), so the
+          next call cannot silently bypass it; re-opening requires an explicit
+          authorized resume() and the repair counts are never reset.
         - Counted round REQUIRES >=1 evidence ref; free counts are refused.
         - Counted increments keep total == sum(per-cause) intact.
         """
         actions = self.data.setdefault("attempted_actions", [])
+        if not new_evidence:
+            # No new evidence is a NO-PROGRESS stop signal (V1.2 rule C). It
+            # is checked FIRST and unconditionally (independent of the round
+            # cap): once a root cause yields no new evidence, further repair
+            # of it must stop and be persisted, never silently loop. The
+            # stop is written to BLOCKED + stop_reason so the next call
+            # cannot bypass it; re-opening needs an explicit authorized
+            # resume() that carries the existing repair counts forward.
+            actions.append({"action": f"repair:{cause}", "result": result,
+                           "new_evidence": False})
+            self.mark_stopped(
+                f"no new evidence for cause '{cause}' (last result={result}); "
+                f"repair stopped and persisted")
+            return False
         if not self.repair_allowed(cause):
             actions.append({"action": f"repair:{cause}", "result": "NO_PROGRESS",
-                           "new_evidence": False})
-            return False
-        if not new_evidence:
-            actions.append({"action": f"repair:{cause}", "result": result,
                            "new_evidence": False})
             return False
         if not evidence_refs:

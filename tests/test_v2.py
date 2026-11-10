@@ -105,9 +105,9 @@ class L1_RegRepo(unittest.TestCase):
                      'SKILL_LOADED', 'TASK_TYPE', 'MODE', 'BUDGET',
                      'UNKNOWN', 'DISCOVERED', 'INSTALLED', 'LOADED', 'BEHAVIOR_VERIFIED',
                      'CODE_DEV', 'RESEARCH', 'ARTIFACT', 'task-ledger.json',
-                     '取消ChatGPT单控绑定', '连续2次轮询无变化即停', 'FINAL_STATUS',
+                     '授权责任方', '连续2次轮询无变化即停', 'FINAL_STATUS',
                      'preview-injected', 'native', 'dispatch-injected', 'unverified',
-                     'machine-fields']:
+                     'machine-fields', '禁未经授权转包']:
             with self.subTest(term=term):
                 self.assertIn(term, s)
 
@@ -150,8 +150,8 @@ class L1_RegRepo(unittest.TestCase):
 
     def test_cb_retains_limits(self):
         s = CB.read_text(encoding='utf-8')
-        for term in ['≤2', '≤4', 'UNVERIFIED', '交当前宿主总控/派工方',
-                     'QUOTA=UNKNOWN', 'task-ledger.json', '停轮询≠取消后台任务']:
+        for term in ['≤2', '≤4', 'UNVERIFIED', '授权责任方',
+                     'QUOTA=UNKNOWN', 'task-ledger.json', '停轮询≠取消后台任务', '禁止未经授权转包']:
             with self.subTest(term=term):
                 self.assertIn(term, s)
 
@@ -366,13 +366,19 @@ class L2_N4RepairInheritance(unittest.TestCase):
         self.assertEqual(led.data["repair_rounds"]["a"], 2)
         self.assertFalse(led.repair_allowed("a"))
 
-    def test_no_new_evidence_not_a_new_round(self):
+    def test_no_new_evidence_not_a_new_round_and_stops(self):
         led = self._led()
         led.data["repair_rounds"]["a"] = 1
         led.data["repair_rounds"]["total"] = 1
         ok = led.record_repair("a", new_evidence=False, result="FAIL")
         self.assertFalse(ok)
         self.assertEqual(led.data["repair_rounds"]["a"], 1, "round without new evidence must not increment")
+        # V2.0.2 final-closing: a no-new-evidence round now immediately and
+        # persistently stops the repair (BLOCKED), it does not loop silently.
+        self.assertEqual(led.data["status"], "BLOCKED")
+        self.assertTrue(led.data["stop_reason"])
+        self.assertFalse(led.can_continue(), "no-new-evidence stop must block auto-continue")
+        self.assertFalse(led.repair_allowed("b"), "next call must NOT bypass the persisted stop")
 
 
 class L2_R2LedgerRoundTrip(unittest.TestCase):
@@ -752,6 +758,44 @@ class L_FinalLedgerClosing(unittest.TestCase):
             re2 = Ledger.load(p)
             self.assertEqual(re2.data["status"], "BLOCKED", "stop state must survive reload")
             self.assertFalse(re2.repair_allowed("a"), "reloaded stopped ledger must not auto-continue")
+
+    def test_record_repair_no_evidence_autostop_evidence_chain(self):
+        """Final-closing bug fix: a no-new-evidence record_repair must
+        (1) immediately BLOCK, (2) persist via real JSON save/reload,
+        (3) refuse the next call (no bypass), (4) only re-open via an
+        explicit authorized resume, and (5) inherit prior repair counts
+        without reset."""
+        led = Ledger({"task_id": "T", "goal": "g", "task_type": "CODE_DEV",
+                      "status": "IN_PROGRESS",
+                      "repair_rounds": {"a": 1, "total": 1}})
+        # a counted round first (with evidence), then a no-evidence outcome
+        self.assertTrue(led.record_repair("a", new_evidence=True, result="FAIL",
+                                          evidence_refs=["log-1"]))
+        self.assertEqual(led.data["repair_rounds"]["a"], 2)
+        ok = led.record_repair("a", new_evidence=False, result="NO_PROGRESS")
+        self.assertFalse(ok)
+        # (1) immediately BLOCKED with an explicit stop reason
+        self.assertEqual(led.data["status"], "BLOCKED")
+        self.assertIn("no new evidence", led.data["stop_reason"])
+        # (2) real JSON persistence: save -> reload
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / "task-ledger.json"
+            led.save(p)
+            re2 = Ledger.load(p)
+            self.assertEqual(re2.data["status"], "BLOCKED")
+            self.assertTrue(re2.data["stop_reason"])
+            # (3) no bypass: neither another cause nor the same one
+            self.assertFalse(re2.repair_allowed("a"))
+            self.assertFalse(re2.repair_allowed("b"))
+            # (4) re-open requires EXPLICIT authorization
+            self.assertFalse(re2.resume(authorized=False))
+            self.assertEqual(re2.data["status"], "BLOCKED")
+            self.assertTrue(re2.resume(authorized=True))
+            self.assertEqual(re2.data["status"], "IN_PROGRESS")
+            # (5) counts inherited, never reset
+            self.assertEqual(re2.data["repair_rounds"], {"a": 2, "total": 2})
+            self.assertFalse(re2.repair_allowed("a"),
+                             "inherited cause at its cap must stay refused after resume")
 
 
 class L_FinalPathDedup(unittest.TestCase):

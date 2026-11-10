@@ -44,7 +44,7 @@ def core_key_terms(n: int):
         9: ["免打扰", "四条件"],
         10: ["擅自扩大", "后续阶段"],
         11: ["DISCOVERED", "BEHAVIOR_VERIFIED"],
-        12: ["总控", "派工方"],
+        12: ["授权责任方", "转包"],
     }
     return anchors.get(n, [])
 

@@ -6,12 +6,14 @@
 
 ## Project positioning
 
-This project is an execution-governance Skill (a prompt-layer execution protocol) — it is not an auto-scheduler, not a runtime sandbox, and it has no unverified host-level programmatic enforcement:
+This project is a **model-agnostic, agent-independent goal-driven execution protocol** (a prompt-layer execution protocol) — it is not an auto-scheduler, not a runtime sandbox, and it has no unverified host-level programmatic enforcement:
 
-- It changes the Agent's unit of work from "step-by-step Q&A" to "fully acceptable outcomes": within one explicit authorization it completes implement → test → fix → re-test continuously; ordinary technical problems are handled autonomously; only material risk / irreversible / out-of-scope events are escalated to the user.
+- The task initiator / user defines the goal and authorization; the executing Agent (any host, any model) works autonomously within that authorization, accepts on evidence, and stops or escalates when needed.
+- The protocol does **not** require a central dispatcher, any specific model / Agent / platform, or a fixed parent/child Agent architecture. The failure-handoff recipient is whatever the task specifies (task initiator / authorizing party / designated recipient) — no specific controller is preset.
+- It changes the Agent's unit of work from "step-by-step Q&A" to "fully acceptable outcomes": within one explicit authorization it completes implement → test → fix → re-test continuously; ordinary technical problems are handled autonomously; only material risk / irreversible / out-of-scope events are escalated.
 - It provides a failure circuit breaker (≤2 rounds per root cause, ≤4 rounds per task, stop without new evidence) and cross-session ledger recovery (`task-ledger.json` for L-level tasks only).
 - It does **not** auto-install the Skill, does **not** provide host-level programmatic enforcement, and does **not** auto-purchase quota. Whether a host can enforce any rule is determined by real host testing; unverified capabilities are marked UNVERIFIED, never "supported".
-- Platform safety rules, user authorization, project `AGENTS.md` and dev guards **take precedence over this Skill**; it grants no extra permissions.
+- Platform safety rules, user authorization, project `AGENTS.md` and dev guards **take precedence over this Skill**; it grants no extra permissions and no unauthorized handoff.
 
 ## Architecture: CORE + one-level references + adapters
 
@@ -43,13 +45,13 @@ doraemon-goal-driven-delivery/
 
 Mixed deliverables classify by the primary one; secondary requirements go to GAPS and load only the primary reference. Single source for classification & fields: [machine-fields.md](references/machine-fields.md).
 
-### Three task-type usage examples (dispatch body fragments)
+### Three task-type usage examples (generic, reproducible)
 
-| Task | Dispatch fields | Classification | Loads |
+| Task (example — any similar task works) | Dispatch fields | Classification | Loads |
 |---|---|---|---|
-| Add incremental pull to the auction collector | `TASK_TYPE=CODE_DEV` `GOAL=…` `BUDGET={level:M,time_seconds:1800,tool_calls:25}` | CODE_DEV | code-dev.md |
-| Re-verify whether a previous audit conclusion still holds | `TASK_TYPE=RESEARCH` `MODE=AUDIT` | RESEARCH (AUDIT = its MODE) | research.md |
-| Produce a V2-architecture PPT for review | `TASK_TYPE=ARTIFACT` (PPT subtype) | ARTIFACT | artifact.md "PPT dedicated workflow" |
+| Add input validation and error responses to an existing REST API endpoint | `TASK_TYPE=CODE_DEV` `GOAL=…` `BUDGET={level:M,time_seconds:1800,tool_calls:25}` | CODE_DEV | code-dev.md |
+| Verify whether a third-party library security fix still applies in this project's dependencies | `TASK_TYPE=RESEARCH` `MODE=AUDIT` | RESEARCH (AUDIT = its MODE) | research.md |
+| Produce a 10-slide product announcement PPT (incl. data slides and QA) | `TASK_TYPE=ARTIFACT` (PPT subtype) | ARTIFACT | artifact.md "PPT dedicated workflow" |
 
 Each example spells out GOAL / scope / acceptance / authorization / BUDGET in the dispatch; the Agent executes continuously in one pass and handles ordinary technical choices autonomously — only material risk is escalated.
 
@@ -126,4 +128,10 @@ python -X utf8 tests\consistency_check.py             # CodeBuddy inline-rules v
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) (2.0.2 RC: 9 structural fixes + professional README; 2.0.1: audit-defect round 2; 2.0.0-draft: initial build).
+See [CHANGELOG.md](CHANGELOG.md) (2.0.2 RC: structural fixes + professional README; 2.0.1: audit-defect round 2; 2.0.0-draft: initial build).
+
+## Version lineage (stated precisely to avoid misreading)
+
+- The **remote `main` baseline is V1.1** (commit `2bc1117`, "Use public agent names and add GitHub Actions contract CI").
+- **V1.2 is the locally maintained line** (authoritative source SHA256 `D0DB9299…`, with the 11-05 audit pack and 8/8 test log evidence); **no independent V1.2 Git commit exists on the remote yet** — the repo's `references/`, `schemas/`, `adapters/` and friends are derived from the V1.2 rule set.
+- V2 (this package) takes V1.2 as its rule baseline: the V1.2 four task types map onto the V2 three-way split; the V1.1 circuit-breaker rules A–E and the V1.2 path-autonomous-discovery A–H are all carried over into `references/`.

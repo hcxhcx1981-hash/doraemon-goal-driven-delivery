@@ -6,12 +6,14 @@
 
 ## 项目定位
 
-本项目是一个**执行治理 Skill（prompt 层执行协议）**，不是自动调度器，不是运行时沙箱，也不具备未经验证的宿主级程序强制能力：
+本项目是一个**模型无关（model-agnostic）、Agent 无关（agent-independent）的目标驱动执行协议**（prompt 层执行协议），不是自动调度器，不是运行时沙箱，也不具备未经验证的宿主级程序强制能力：
 
-- 它把 Agent 的工作单位从"逐步问答"变成"完整可验收成果"：在一次明确授权内连续完成实现→测试→修复→复测，常规技术问题自主处理，只有实质风险/不可逆/越界才请示用户。
+- 任务发起方/用户定义目标与授权，执行 Agent（可以是任何宿主、任何模型）在授权范围内自主工作；按证据验收，必要时停止并升级风险。
+- 协议**不要求**存在中心调度器、不要求任何具体模型/Agent/平台、不要求固定的主/子 Agent 架构；执行 Agent 的失败交接对象由任务约定（任务发起方/授权责任方/指定接收方），不预设 ChatGPT 或任何单一控制器。
+- 它把 Agent 的工作单位从"逐步问答"变成"完整可验收成果"：在一次明确授权内连续完成实现→测试→修复→复测，常规技术问题自主处理，只有实质风险/不可逆/越界才升级。
 - 它提供失败熔断（同根因≤2轮、单任务≤4轮、无新证据即停）与跨会话台账恢复（仅 L 级任务写 `task-ledger.json`）。
 - 它**不**自动安装 Skill、**不**替宿主做程序级强制熔断、**不**自动购买额度。宿主能否强制某条规则，以宿主实测为准；未验证的能力一律标注 UNVERIFIED，不写成"已支持"。
-- 平台安全规则、用户授权、项目 `AGENTS.md` 与开发守卫**优先于本 Skill**；本 Skill 不授予任何额外权限。
+- 平台安全规则、用户授权、项目 `AGENTS.md` 与开发守卫**优先于本 Skill**；本 Skill 不授予任何额外权限，也禁止未经授权转包。
 
 ## 架构：CORE + 一层 references + adapters
 
@@ -43,13 +45,13 @@ doraemon-goal-driven-delivery/
 
 混合交付物取主类判型，次类写 GAPS，只加载主类一份 reference。判型与字段的唯一规范：[machine-fields.md](references/machine-fields.md)。
 
-### 三类任务使用示例（派工正文片段）
+### 三类任务使用示例（通用、可复现）
 
-| 任务 | 派工字段 | 判型 | 加载 |
+| 任务（示例，可任意替换为同类任务） | 派工字段 | 判型 | 加载 |
 |---|---|---|---|
-| 给拍卖采集器加增量拉取 | `TASK_TYPE=CODE_DEV` `GOAL=…` `BUDGET={level:M,time_seconds:1800,tool_calls:25}` | CODE_DEV | code-dev.md |
-| 复核上轮审计结论是否仍成立 | `TASK_TYPE=RESEARCH` `MODE=AUDIT` | RESEARCH（AUDIT=MODE） | research.md |
-| 出 V2 架构 PPT 给评审 | `TASK_TYPE=ARTIFACT`（PPT 子类型） | ARTIFACT | artifact.md「PPT 专项」 |
+| 为现有 REST API 端点增加输入校验与错误返回 | `TASK_TYPE=CODE_DEV` `GOAL=…` `BUDGET={level:M,time_seconds:1800,tool_calls:25}` | CODE_DEV | code-dev.md |
+| 核验某第三方库安全修复在本项目依赖中是否仍然有效 | `TASK_TYPE=RESEARCH` `MODE=AUDIT` | RESEARCH（AUDIT=MODE） | research.md |
+| 产出 10 页产品发布公告 PPT（含数据页与 QA 页） | `TASK_TYPE=ARTIFACT`（PPT 子类型） | ARTIFACT | artifact.md「PPT 专项」 |
 
 每个示例都在派工中写明 GOAL / 范围 / 验收 / 授权 / BUDGET，Agent 一次性连续执行；普通技术选择自主处理，只有实质风险才请示。
 
@@ -126,4 +128,10 @@ python -X utf8 tests\consistency_check.py           # CodeBuddy inline-rules 与
 
 ## 变更历史
 
-见 [CHANGELOG.md](CHANGELOG.md)（2.0.2 RC：结构修正 9 项 + README 专业化；2.0.1：审计缺陷二轮修正；2.0.0-draft：首轮建设）。
+见 [CHANGELOG.md](CHANGELOG.md)（2.0.2 RC：结构修正 + README 专业化；2.0.1：审计缺陷二轮修正；2.0.0-draft：首轮建设）。
+
+## 版本沿革（准确描述，避免误读）
+
+- **远端 `main` 当前基线为 V1.1**（Git 提交 `2bc1117`，"Use public agent names and add GitHub Actions contract CI"）。
+- **V1.2 是本地维护的版本线**（权威源 SHA256 `D0DB9299…`，含 11-05 历史审计包与 8/8 测试日志证据），**远端尚不存在独立的 V1.2 Git 提交**；本仓库的 `references/`、`schemas/`、`adapters/` 等由 V1.2 规则演进而来。
+- V2（本包）以 V1.2 为规则基线：V1.2 的四类任务→V2 三分法映射、V1.1 引入的熔断规则 A–E、V1.2 新增的路径自主发现 A–H，均在 `references/` 中完整承接。
