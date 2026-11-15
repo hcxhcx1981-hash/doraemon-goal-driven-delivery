@@ -1,0 +1,6 @@
+version: '3'
+tasks:
+  verify:
+    silent: true
+    cmds:
+      - uv run --locked --offline --no-config python -I -B scripts/verify.py
