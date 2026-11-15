@@ -10,6 +10,8 @@ logs = root / ".verification"
 logs.mkdir(exist_ok=True)
 log = logs / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + ".log")
 env = dict(os.environ, PYTEST_DISABLE_PLUGIN_AUTOLOAD="1", PYTHONDONTWRITEBYTECODE="1")
+env.pop("PYTEST_ADDOPTS", None)
+env.pop("PYTEST_PLUGINS", None)
 with log.open("w", encoding="utf-8") as stream:
     result = subprocess.run(
         [sys.executable, "-I", "-B", "-m", "pytest", "-q", "--tb=long"],
